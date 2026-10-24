@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/*
+ * Paleta suave, com contraste AA/AAA para leitura confortável.
+ * Cores de destaque: azul (ações), verde (acertos), vermelho (erros)
+ * e uma cor discreta para cada disciplina.
+ */
+@theme {
+  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, "Segoe UI", Arial, sans-serif;
+
+  --color-page: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-ink: #1f2a37;
+  --color-ink-soft: #4a5565;
+  --color-line: #e2ddd2;
+  --color-line-strong: #c9c2b4;
+
+  --color-brand: #2456a6;
+  --color-brand-strong: #1b4384;
+  --color-brand-soft: #e8eff9;
+
+  --color-success: #17703a;
+  --color-success-soft: #e3f4e8;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdeceb;
+  --color-warning: #8a5300;
+  --color-warning-soft: #fdf3dc;
+
+  --color-portugues: #6b46a8;
+  --color-portugues-soft: #f1ecfa;
+  --color-matematica: #a14a12;
+  --color-matematica-soft: #fbede4;
+  --color-informatica: #00809a;
+  --color-informatica-strong: #00687d;
+  --color-informatica-soft: #e0f3f6;
+}
+
+/* Tamanho base da letra (ajustável pela usuária no topo da página). */
+html {
+  font-size: 112.5%;
+  color-scheme: light;
+}
+html[data-font-scale="grande"] {
+  font-size: 125%;
+}
+html[data-font-scale="maior"] {
+  font-size: 137.5%;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  line-height: 1.6;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+dialog::backdrop {
+  background: rgb(31 42 55 / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
