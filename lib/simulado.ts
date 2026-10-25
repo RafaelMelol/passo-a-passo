@@ -142,6 +142,7 @@ export function finishSimulado(
         isCorrect,
         answeredAt: finishedAt.toISOString(),
         mode: "simulado",
+        questionVersion: question.version ?? 1,
       });
     }
   }

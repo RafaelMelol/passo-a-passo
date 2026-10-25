@@ -10,10 +10,10 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { EmptyState, LoadingState } from "@/components/ui/States";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import { useStudyData } from "@/hooks/useStudyData";
 import { formatClock, plural } from "@/lib/format";
 import { MAX_SIMULADOS, recordAttempts } from "@/lib/history";
-import { getQuestion } from "@/lib/questions/bank";
 import { countAnswered, finishSimulado } from "@/lib/simulado";
 import { studyStore } from "@/lib/study-store";
 import type { OptionLetter } from "@/types/question";
@@ -66,6 +66,8 @@ function Clock({ baseMs }: { baseMs: number }) {
 export function SimuladoRunner() {
   const router = useRouter();
   const { state, update } = useStudyData();
+  const questionBank = useQuestionBank();
+  const getQuestion = (id: string) => questionBank.byId.get(id);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [showClock, setShowClock] = useState(true);

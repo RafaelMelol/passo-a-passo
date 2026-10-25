@@ -37,6 +37,13 @@ guia simples para enviar à pessoa que vai estudar, incluindo como colocar o sit
 | `npm run check` | Tipos + lint + testes, em sequência |
 | `npm run icons` | Regera os ícones PNG do celular a partir de `app/icon.svg` |
 
+## Coletor diário e banco central
+
+O site também tem um **coletor automático** que, uma vez por dia, procura provas oficiais de nível fundamental em fontes que
+permitem coleta automatizada (hoje: Inep/Encceja), confere o gabarito oficial com o caderno e publica as provas aprovadas em
+"Provas oficiais". Há um painel administrativo em `/admin` e um banco PostgreSQL central. Tudo está explicado em
+**[COLETOR.md](COLETOR.md)**: fontes e políticas, validação, agendamento, variáveis de ambiente e limitações.
+
 ## Funcionalidades
 
 - **Painel inicial**: boas-vindas, "continuar de onde parou", questões respondidas, % de acertos, dias seguidos,
@@ -181,6 +188,10 @@ data/                     Disciplinas/assuntos, questões de prática, provas of
 lib/                      Correção, pontuação, simulados, histórico, validação, persistência, formatação
 hooks/                    useStudyData (store do localStorage) e useStartPractice
 types/                    Tipos TypeScript
+lib/crawler/              Coletor: adaptadores, leitura de PDF/HTML, validação, agendamento
+lib/server/               Banco central (PostgreSQL/PGlite), migrações e repositórios
+lib/security/, lib/api/   Autenticação do painel, proteção das rotas e manipuladores das APIs
+app/api/                  APIs públicas, administrativas e a rota do agendador
 tests/                    Testes (Vitest + Testing Library)
 scripts/                  Geração dos ícones do celular
 ```

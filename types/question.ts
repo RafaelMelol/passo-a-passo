@@ -75,4 +75,6 @@ export interface Question {
   contentType: ContentType;
   source: QuestionSource;
   verification: QuestionVerification;
+  /** Versão do conteúdo (aumenta quando o banco central corrige a questão). Ausente = 1. */
+  version?: number;
 }

@@ -2,7 +2,7 @@
 
 import { CircleCheck, CircleMinus, CircleSlash, CircleX, ClipboardCheck, FileText, PencilLine, SearchX } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, ButtonLink, ExternalLink } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -16,8 +16,9 @@ import { useStartPractice } from "@/hooks/useStartPractice";
 import { useStudyData } from "@/hooks/useStudyData";
 import { encouragement, plural } from "@/lib/format";
 import { MAX_OFFICIAL_ATTEMPTS } from "@/lib/history";
-import { defaultSectionIds, gradeOfficialExam, sectionQuestionNumbers, type OfficialItemResult } from "@/lib/official";
+import { gradeOfficialExam, sectionQuestionNumbers, type OfficialExamGrade, type OfficialItemResult } from "@/lib/official";
 import { createId } from "@/lib/random";
+import type { OfficialExamSection } from "@/types/official";
 import { OPTION_LETTERS, type OptionLetter } from "@/types/question";
 
 const STATUS_VIEW: Record<OfficialItemResult["status"], { label: string; icon: React.ReactNode }> = {
@@ -27,31 +28,94 @@ const STATUS_VIEW: Record<OfficialItemResult["status"], { label: string; icon: R
   anulada: { label: "Anulada pela banca", icon: <CircleSlash aria-hidden className="size-5 text-ink-soft" /> },
 };
 
+/** Dados mínimos de uma prova para o cartão-resposta (provas do site ou do banco central). */
+export interface SheetExam {
+  id: string;
+  title: string;
+  examBoard: string;
+  bookletType: string;
+  optionCount: number;
+  sections: OfficialExamSection[];
+  bookletUrl: string;
+}
+
+type Grader = (answers: Record<string, OptionLetter>, sectionIds: string[]) => Promise<OfficialExamGrade>;
+
+function NotFound() {
+  return (
+    <EmptyState
+      icon={<SearchX aria-hidden />}
+      title="Prova não encontrada"
+      description="Escolha uma das provas oficiais disponíveis."
+      action={<ButtonLink href="/provas-oficiais">Ver provas oficiais</ButtonLink>}
+    />
+  );
+}
+
+/** Escolhe a prova: as conferidas do site são corrigidas no navegador; as do banco central, no servidor. */
 export function AnswerSheet() {
   const params = useSearchParams();
+  const id = params.get("prova") ?? "";
+  const staticExam = getOfficialExam(id);
+  const [remote, setRemote] = useState<{ id: string; exam: SheetExam | null; error?: string } | null>(null);
+
+  useEffect(() => {
+    if (staticExam || !/^[a-z0-9][a-z0-9-]{2,80}$/.test(id)) return;
+    let active = true;
+    fetch(`/api/exams/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!active) return;
+        if (response.status === 404) return setRemote({ id, exam: null });
+        if (!response.ok) return setRemote({ id, exam: null, error: "O banco de provas está indisponível no momento. Tente mais tarde." });
+        const data = (await response.json()) as SheetExam;
+        setRemote({ id, exam: { ...data, bookletUrl: data.bookletUrl } });
+      })
+      .catch(() => active && setRemote({ id, exam: null, error: "Sem conexão com a internet: esta prova precisa da internet para ser corrigida." }));
+    return () => {
+      active = false;
+    };
+  }, [id, staticExam]);
+
+  if (staticExam) {
+    const exam: SheetExam = { ...staticExam, bookletUrl: staticExam.links.booklet };
+    return <AnswerSheetView exam={exam} grade={async (answers, sectionIds) => gradeOfficialExam(staticExam, answers, sectionIds)} />;
+  }
+  if (!/^[a-z0-9][a-z0-9-]{2,80}$/.test(id)) return <NotFound />;
+  if (!remote || remote.id !== id) return <LoadingState label="Carregando prova…" />;
+  if (remote.error) return <Notice tone="warning" title="Não foi possível abrir a prova">{remote.error}</Notice>;
+  if (!remote.exam) return <NotFound />;
+  return (
+    <AnswerSheetView
+      exam={remote.exam}
+      grade={async (answers, sectionIds) => {
+        const response = await fetch(`/api/exams/${encodeURIComponent(id)}/grade`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ answers, sectionIds }),
+        });
+        if (!response.ok) throw new Error("Não foi possível corrigir agora. Verifique a internet e tente de novo.");
+        return (await response.json()) as OfficialExamGrade;
+      }}
+    />
+  );
+}
+
+function AnswerSheetView({ exam, grade: gradeWith }: { exam: SheetExam; grade: Grader }) {
   const { state, update } = useStudyData();
   const startPractice = useStartPractice();
-  const [graded, setGraded] = useState(false);
+  const [result, setResult] = useState<OfficialExamGrade | null>(null);
+  const [gradeError, setGradeError] = useState<string | null>(null);
+  const [grading, setGrading] = useState(false);
   const [confirmGrade, setConfirmGrade] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const exam = getOfficialExam(params.get("prova") ?? "");
-
-  if (!exam) {
-    return (
-      <EmptyState
-        icon={<SearchX aria-hidden />}
-        title="Prova não encontrada"
-        description="Escolha uma das provas oficiais disponíveis."
-        action={<ButtonLink href="/provas-oficiais">Ver provas oficiais</ButtonLink>}
-      />
-    );
-  }
+  // "Caderno único" (Encceja) vira "único" para não repetir a palavra "caderno".
+  const bookletName = exam.bookletType.replace(/^caderno\s+/i, "");
 
   const header = (
     <PageHeader
       title={exam.title}
       back={{ href: "/provas-oficiais", label: "Provas oficiais" }}
-      description={`Cartão-resposta · ${exam.examBoard} · caderno ${exam.bookletType}`}
+      description={`Cartão-resposta · ${exam.examBoard} · caderno ${bookletName}`}
     />
   );
 
@@ -59,7 +123,7 @@ export function AnswerSheet() {
 
   const currentExam = exam;
   const draft = state.data.officialDrafts[exam.id];
-  const sectionIds = draft?.sectionIds ?? defaultSectionIds(exam);
+  const sectionIds = draft?.sectionIds ?? exam.sections.filter((section) => section.subject).map((section) => section.id);
   const answers = draft?.answers ?? {};
   const letters = OPTION_LETTERS.slice(0, exam.optionCount);
   const chosenSections = exam.sections.filter((section) => sectionIds.includes(section.id));
@@ -94,9 +158,19 @@ export function AnswerSheet() {
     saveDraft(sectionIds, next);
   }
 
-  function grade() {
+  async function grade() {
     setConfirmGrade(false);
-    const result = gradeOfficialExam(currentExam, answers, sectionIds);
+    setGrading(true);
+    setGradeError(null);
+    let graded: OfficialExamGrade;
+    try {
+      graded = await gradeWith(answers, sectionIds);
+    } catch (error) {
+      setGradeError(error instanceof Error ? error.message : "Não foi possível corrigir agora.");
+      setGrading(false);
+      return;
+    }
+    setGrading(false);
     update((data) => ({
       ...data,
       officialAttempts: [
@@ -107,16 +181,15 @@ export function AnswerSheet() {
           sectionIds,
           answers,
           finishedAt: new Date().toISOString(),
-          score: result.score,
+          score: graded.score,
         },
       ].slice(-MAX_OFFICIAL_ATTEMPTS),
     }));
-    setGraded(true);
+    setResult(graded);
     window.scrollTo({ top: 0 });
   }
 
-  if (graded) {
-    const result = gradeOfficialExam(exam, answers, sectionIds);
+  if (result) {
     return (
       <>
         {header}
@@ -218,7 +291,7 @@ export function AnswerSheet() {
           </Card>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button onClick={() => setGraded(false)} icon={<PencilLine aria-hidden className="size-5" />}>
+            <Button onClick={() => setResult(null)} icon={<PencilLine aria-hidden className="size-5" />}>
               Voltar ao cartão-resposta
             </Button>
             <ButtonLink href="/provas-oficiais" variant="secondary">
@@ -238,12 +311,12 @@ export function AnswerSheet() {
           <CardTitle>Antes de começar</CardTitle>
           <ol className="list-decimal space-y-1 pl-5 text-ink-soft">
             <li>
-              Abra o caderno de prova <strong className="text-ink">{exam.bookletType}</strong> no site da banca.
+              Abra o caderno de prova <strong className="text-ink">{bookletName}</strong> no site da banca.
             </li>
             <li>Resolva as questões e marque aqui a letra escolhida em cada uma.</li>
             <li>Suas marcações ficam salvas: você pode parar e continuar depois.</li>
           </ol>
-          <ExternalLink href={exam.links.booklet} className="inline-flex min-h-11 items-center gap-2 font-bold text-brand underline">
+          <ExternalLink href={exam.bookletUrl} className="inline-flex min-h-11 items-center gap-2 font-bold text-brand underline">
             <FileText aria-hidden className="size-5" /> Abrir a prova oficial (PDF)
           </ExternalLink>
         </Card>
@@ -323,6 +396,11 @@ export function AnswerSheet() {
           ))
         )}
 
+        {gradeError && (
+          <Notice tone="danger" role="alert">
+            {gradeError}
+          </Notice>
+        )}
         <div className="sticky bottom-20 z-20 flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between xl:bottom-4">
           <p className="font-bold" aria-live="polite">
             {answeredCount} de {numbers.length} questões marcadas
@@ -333,8 +411,8 @@ export function AnswerSheet() {
                 Limpar tudo
               </Button>
             )}
-            <Button onClick={() => setConfirmGrade(true)} disabled={numbers.length === 0} icon={<ClipboardCheck aria-hidden className="size-5" />}>
-              Corrigir minhas respostas
+            <Button onClick={() => setConfirmGrade(true)} disabled={numbers.length === 0 || grading} icon={<ClipboardCheck aria-hidden className="size-5" />}>
+              {grading ? "Corrigindo…" : "Corrigir minhas respostas"}
             </Button>
           </div>
         </div>

@@ -8,11 +8,12 @@ import { Card } from "@/components/ui/Card";
 import { Notice } from "@/components/ui/Notice";
 import { SUBJECT_STYLES } from "@/components/ui/subject-style";
 import { DIFFICULTIES, SUBJECTS, isDifficulty, isSubjectId, isTopicOfSubject } from "@/data/subjects";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import { useStartPractice } from "@/hooks/useStartPractice";
 import { useStudyData } from "@/hooks/useStudyData";
 import { statsByTopic } from "@/lib/history";
-import { isPracticeFinished, practiceHref, practiceTitle } from "@/lib/practice";
-import { filterQuestions, questionBank } from "@/lib/questions/bank";
+import { isPracticeFinished, practiceHref, practicePool, practiceTitle } from "@/lib/practice";
+import { filterQuestions } from "@/lib/questions/bank";
 import type { Difficulty, SubjectId, TopicId } from "@/types/question";
 
 function optionClass(active: boolean) {
@@ -23,6 +24,7 @@ function optionClass(active: boolean) {
 
 export function StudySetup() {
   const startPractice = useStartPractice();
+  const questionBank = useQuestionBank();
   const params = useSearchParams();
   const { state } = useStudyData();
 
@@ -37,9 +39,11 @@ export function StudySetup() {
     return isDifficulty(value) ? value : "todas";
   });
 
+  const [origin, setOrigin] = useState<"todas" | "oficiais" | "pratica">("todas");
+  const hasOfficial = questionBank.questions.some((question) => question.contentType === "oficial");
   const topicStats = useMemo(() => new Map((state ? statsByTopic(state.data.attempts) : []).map((s) => [s.topic, s])), [state]);
   const subjectInfo = SUBJECTS.find((item) => item.id === subject) ?? SUBJECTS[0];
-  const available = filterQuestions(questionBank.questions, { subject, topic, difficulty }).length;
+  const available = practicePool(questionBank.questions, { subject, topic, difficulty, origin: hasOfficial ? origin : "todas" }).length;
   const practice = state?.data.practice;
   const inProgress = practice && !isPracticeFinished(practice) ? practice : null;
 
@@ -49,7 +53,7 @@ export function StudySetup() {
   }
 
   function start() {
-    startPractice({ subject, topic, difficulty });
+    startPractice({ subject, topic, difficulty, ...(hasOfficial && origin !== "todas" ? { origin } : {}) });
   }
 
   return (
@@ -160,6 +164,26 @@ export function StudySetup() {
           </div>
         </fieldset>
       </Card>
+
+      {hasOfficial && (
+        <Card>
+          <fieldset>
+            <legend className="mb-3 text-xl font-bold">4. Origem das questões</legend>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {[
+                { id: "todas" as const, name: "Todas" },
+                { id: "oficiais" as const, name: "Só oficiais verificadas" },
+                { id: "pratica" as const, name: "Só de prática" },
+              ].map((item) => (
+                <label key={item.id} className={`${optionClass(origin === item.id)} justify-center text-center`}>
+                  <input type="radio" name="origem" checked={origin === item.id} onChange={() => setOrigin(item.id)} className="sr-only" />
+                  <span className="font-bold">{item.name}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </Card>
+      )}
 
       <div className="flex flex-col items-start gap-3 rounded-2xl bg-brand-soft p-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-lg" aria-live="polite">

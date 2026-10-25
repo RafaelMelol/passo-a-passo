@@ -6,7 +6,14 @@ import { filterQuestions } from "./questions/bank";
 import { shuffle, type RandomSource } from "./random";
 
 export function practiceFilterKey(filters: PracticeFilters): string {
-  return `${filters.subject}|${filters.topic}|${filters.difficulty}`;
+  const origin = filters.origin && filters.origin !== "todas" ? `|${filters.origin}` : "";
+  return `${filters.subject}|${filters.topic}|${filters.difficulty}${origin}`;
+}
+
+/** Questões que entram numa lista de prática com esses filtros. */
+export function practicePool(questions: readonly Question[], filters: PracticeFilters): Question[] {
+  const contentType = filters.origin === "oficiais" ? "oficial" : filters.origin === "pratica" ? "pratica-autoral" : undefined;
+  return filterQuestions(questions, { subject: filters.subject, topic: filters.topic, difficulty: filters.difficulty, contentType });
 }
 
 export function practiceTitle(filters: PracticeFilters): string {
@@ -20,6 +27,7 @@ export function practiceHref(filters: PracticeFilters): string {
     assunto: filters.topic,
     dificuldade: filters.difficulty,
   });
+  if (filters.origin && filters.origin !== "todas") params.set("origem", filters.origin);
   return `/praticar?${params.toString()}`;
 }
 
@@ -46,7 +54,7 @@ export function createPracticeProgress(
   now: Date,
   random: RandomSource = Math.random,
 ): PracticeProgress | null {
-  const pool = filterQuestions(bankQuestions, filters);
+  const pool = practicePool(bankQuestions, filters);
   if (pool.length === 0) return null;
   const ordered = buildPracticeOrder(pool, attempts, random);
   return {

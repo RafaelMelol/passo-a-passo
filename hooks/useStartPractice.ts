@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { createPracticeProgress, practiceHref, practiceTitle } from "@/lib/practice";
-import { questionBank } from "@/lib/questions/bank";
+import { useQuestionBank } from "./useQuestionBank";
 import { studyStore } from "@/lib/study-store";
 import type { PracticeFilters } from "@/types/study";
 
 /** Cria uma nova lista de prática (no clique) e abre a página de questões. */
 export function useStartPractice(): (filters: PracticeFilters) => void {
   const router = useRouter();
+  const questionBank = useQuestionBank();
   return useCallback(
     (filters: PracticeFilters) => {
       const now = new Date();
@@ -25,6 +26,6 @@ export function useStartPractice(): (filters: PracticeFilters) => void {
       router.push(practiceHref(filters));
       window.scrollTo({ top: 0 });
     },
-    [router],
+    [router, questionBank],
   );
 }

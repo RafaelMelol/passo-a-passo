@@ -10,8 +10,8 @@ import { Notice } from "@/components/ui/Notice";
 import { LoadingState } from "@/components/ui/States";
 import { SUBJECT_STYLES } from "@/components/ui/subject-style";
 import { DIFFICULTIES, SUBJECTS } from "@/data/subjects";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import { useStudyData } from "@/hooks/useStudyData";
-import { questionBank } from "@/lib/questions/bank";
 import { MAX_SIMULADO_QUESTIONS, availableForSimulado, countAnswered, createSimulado } from "@/lib/simulado";
 import type { Difficulty, SubjectId } from "@/types/question";
 
@@ -26,12 +26,14 @@ function choiceClass(active: boolean) {
 export function SimuladoSetup() {
   const router = useRouter();
   const { state, update } = useStudyData();
+  const questionBank = useQuestionBank();
   const [count, setCount] = useState<number>(10);
   const [customCount, setCustomCount] = useState("");
   const [mixAll, setMixAll] = useState(true);
   const [chosen, setChosen] = useState<SubjectId[]>(["portugues"]);
   const [difficulty, setDifficulty] = useState<Difficulty | "todas">("todas");
   const [timerEnabled, setTimerEnabled] = useState(false);
+  const [onlyUnseen, setOnlyUnseen] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +42,9 @@ export function SimuladoSetup() {
 
   const active = state.data.activeSimulado;
   const subjects = mixAll ? [] : chosen;
-  const available = availableForSimulado(questionBank.questions, { subjects, difficulty }).length;
+  const answeredIds = new Set(state.data.attempts.map((attempt) => attempt.questionId));
+  const pool = onlyUnseen ? questionBank.questions.filter((question) => !answeredIds.has(question.id)) : questionBank.questions;
+  const available = availableForSimulado(pool, { subjects, difficulty }).length;
   const isCustom = !COUNT_OPTIONS.includes(count as (typeof COUNT_OPTIONS)[number]);
   const finalCount = Math.min(count, available);
 
@@ -50,7 +54,7 @@ export function SimuladoSetup() {
 
   function start() {
     setConfirmReplace(false);
-    const result = createSimulado(questionBank.questions, { questionCount: count, subjects, difficulty, timerEnabled });
+    const result = createSimulado(pool, { questionCount: count, subjects, difficulty, timerEnabled });
     if (!result.ok) {
       setError(
         result.reason === "sem-questoes"
@@ -191,7 +195,16 @@ export function SimuladoSetup() {
       </Card>
 
       <Card className="space-y-2">
-        <h2 className="text-xl font-bold">4. Cronômetro (opcional)</h2>
+        <h2 className="text-xl font-bold">4. Questões inéditas (opcional)</h2>
+        <label className="flex min-h-12 cursor-pointer items-center gap-3">
+          <input type="checkbox" checked={onlyUnseen} onChange={(event) => setOnlyUnseen(event.target.checked)} className="size-6 accent-brand" />
+          <span className="font-bold">Usar só questões que eu ainda não respondi</span>
+        </label>
+        <p className="text-ink-soft">Bom para testar se você aprendeu de verdade, sem repetir questões já vistas.</p>
+      </Card>
+
+      <Card className="space-y-2">
+        <h2 className="text-xl font-bold">5. Cronômetro (opcional)</h2>
         <label className="flex min-h-12 cursor-pointer items-center gap-3">
           <input
             type="checkbox"

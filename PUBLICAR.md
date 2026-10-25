@@ -43,6 +43,10 @@ No Windows, o Git abre uma janela do navegador para você entrar na sua conta do
 5. Clique em **Deploy** e espere de 1 a 2 minutos.
 6. Pronto! O endereço fica parecido com `https://passo-a-passo.vercel.app`. Se o nome já existir, a Vercel acrescenta
    um sufixo. Você pode trocar o nome do projeto em **Settings → General** **antes** de passar o link para sua mãe.
+7. *(Opcional)* Para ligar o coletor diário de provas oficiais, siga a seção "Agendamento diário" do
+   [COLETOR.md](COLETOR.md). Ela explica como criar o banco gratuito, cadastrar as variáveis e fazer um novo deploy.
+   - Sem isso, o site de estudos funciona normalmente, só sem as provas coletadas automaticamente.
+   - Também sem isso, o painel `/admin` e o agendamento ficam desligados: as rotas respondem "não configurado".
 
 ### 3. Como atualizar depois
 

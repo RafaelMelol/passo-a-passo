@@ -69,7 +69,7 @@ function parseAnswers(value: unknown): Record<string, OptionLetter> {
 
 function parseAttempt(value: unknown): AnswerAttempt | null {
   if (!isRecord(value)) return null;
-  const { questionId, subject, topic, difficulty, selected, isCorrect, answeredAt, mode } = value;
+  const { questionId, subject, topic, difficulty, selected, isCorrect, answeredAt, mode, questionVersion } = value;
   if (
     isString(questionId) &&
     isSubjectId(subject) &&
@@ -80,7 +80,17 @@ function parseAttempt(value: unknown): AnswerAttempt | null {
     isIsoDate(answeredAt) &&
     (mode === "pratica" || mode === "simulado")
   ) {
-    return { questionId, subject, topic, difficulty, selected, isCorrect, answeredAt, mode };
+    return {
+      questionId,
+      subject,
+      topic,
+      difficulty,
+      selected,
+      isCorrect,
+      answeredAt,
+      mode,
+      ...(isNumber(questionVersion) && questionVersion >= 1 ? { questionVersion: Math.floor(questionVersion) } : {}),
+    };
   }
   return null;
 }
@@ -163,7 +173,7 @@ function parseSimuladoResult(value: unknown): SimuladoResult | null {
 
 function parsePractice(value: unknown): PracticeProgress | null {
   if (!isRecord(value) || !isRecord(value.filters)) return null;
-  const { subject, topic, difficulty } = value.filters;
+  const { subject, topic, difficulty, origin } = value.filters;
   const { filterKey, questionIds, currentIndex, startedAt, updatedAt } = value;
   if (!isSubjectId(subject) || !(topic === "todos" || isTopicId(topic)) || !(difficulty === "todas" || isDifficulty(difficulty))) {
     return null;
@@ -173,7 +183,7 @@ function parsePractice(value: unknown): PracticeProgress | null {
   }
   return {
     filterKey,
-    filters: { subject, topic, difficulty },
+    filters: { subject, topic, difficulty, ...(origin === "oficiais" || origin === "pratica" ? { origin } : {}) },
     questionIds,
     currentIndex: Math.min(Math.max(0, Math.floor(currentIndex)), questionIds.length),
     answers: parseAnswers(value.answers),

@@ -2,6 +2,7 @@ import { ExternalLink as ExternalIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { OfficialExamCard } from "@/components/official/OfficialExamCard";
+import { RemoteExams } from "@/components/official/RemoteExams";
 import { ExternalLink } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Notice } from "@/components/ui/Notice";
@@ -34,6 +35,8 @@ export default function ProvasOficiaisPage() {
       {OFFICIAL_EXAMS.map((exam) => (
         <OfficialExamCard key={exam.id} exam={exam} />
       ))}
+
+      <RemoteExams />
 
       <Card className="space-y-3">
         <CardTitle>Onde encontrar mais provas</CardTitle>

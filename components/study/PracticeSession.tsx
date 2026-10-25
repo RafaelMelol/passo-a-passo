@@ -10,13 +10,13 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { EmptyState, LoadingState } from "@/components/ui/States";
 import { isDifficulty, isSubjectId, isTopicOfSubject } from "@/data/subjects";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import { useStartPractice } from "@/hooks/useStartPractice";
 import { useStudyData } from "@/hooks/useStudyData";
 import { encouragement } from "@/lib/format";
 import { calculateScore } from "@/lib/grading";
 import { recordAttempt } from "@/lib/history";
-import { createPracticeProgress, isPracticeFinished, practiceFilterKey, practiceHref, practiceTitle } from "@/lib/practice";
-import { filterQuestions, getQuestion, questionBank } from "@/lib/questions/bank";
+import { createPracticeProgress, isPracticeFinished, practiceFilterKey, practiceHref, practicePool, practiceTitle } from "@/lib/practice";
 import type { OptionLetter } from "@/types/question";
 import type { PracticeFilters } from "@/types/study";
 
@@ -24,19 +24,23 @@ export function readPracticeFilters(params: { get(name: string): string | null }
   const subject = params.get("disciplina");
   const topic = params.get("assunto") ?? "todos";
   const difficulty = params.get("dificuldade") ?? "todas";
+  const origin = params.get("origem") ?? "todas";
   if (!isSubjectId(subject)) return null;
   if (topic !== "todos" && !isTopicOfSubject(subject, topic)) return null;
   if (difficulty !== "todas" && !isDifficulty(difficulty)) return null;
-  return { subject, topic, difficulty };
+  if (origin !== "todas" && origin !== "oficiais" && origin !== "pratica") return null;
+  return { subject, topic, difficulty, ...(origin !== "todas" ? { origin } : {}) };
 }
 
 export function PracticeSession() {
   const params = useSearchParams();
   const { state, update } = useStudyData();
   const startPractice = useStartPractice();
+  const questionBank = useQuestionBank();
+  const getQuestion = (id: string) => questionBank.byId.get(id);
   const filters = readPracticeFilters(params);
   const key = filters ? practiceFilterKey(filters) : null;
-  const poolSize = filters ? filterQuestions(questionBank.questions, filters).length : 0;
+  const poolSize = filters ? practicePool(questionBank.questions, filters).length : 0;
   const createdForKey = useRef<string | null>(null);
 
   const practice = state?.data.practice ?? null;
@@ -56,7 +60,7 @@ export function PracticeSession() {
       practice: progress,
       lastActivity: { kind: "pratica", title: practiceTitle(filters), href: practiceHref(filters), at: now.toISOString() },
     }));
-  }, [state, filters, key, needsNewList, update]);
+  }, [state, filters, key, needsNewList, update, questionBank]);
 
   if (!filters) {
     return (
@@ -150,6 +154,7 @@ export function PracticeSession() {
         isCorrect,
         answeredAt: now,
         mode: "pratica",
+        questionVersion: currentQuestion.version ?? 1,
       });
       return {
         ...withAttempt,

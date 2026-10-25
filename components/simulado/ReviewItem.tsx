@@ -2,12 +2,12 @@ import { CircleCheck, CircleMinus, CircleX } from "lucide-react";
 import { ExplanationPanel } from "@/components/questions/ExplanationPanel";
 import { OptionList } from "@/components/questions/OptionList";
 import { QuestionView } from "@/components/questions/QuestionView";
-import { getQuestion } from "@/lib/questions/bank";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import type { SimuladoItemResult } from "@/types/study";
 
 /** Uma questão na revisão do simulado: resposta dada, gabarito e explicação. */
 export function ReviewItem({ item, number }: { item: SimuladoItemResult; number: number }) {
-  const question = getQuestion(item.questionId);
+  const question = useQuestionBank().byId.get(item.questionId);
   const status = item.isCorrect ? "certa" : item.selected ? "errada" : "em-branco";
   const label = { certa: "Você acertou", errada: "Você errou", "em-branco": "Ficou em branco" }[status];
   const icon = {

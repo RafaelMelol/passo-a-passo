@@ -12,6 +12,8 @@ export interface AnswerAttempt {
   isCorrect: boolean;
   answeredAt: string;
   mode: StudyMode;
+  /** Versão da questão respondida (o histórico não muda se a questão for atualizada depois). */
+  questionVersion?: number;
 }
 
 export interface ScoreSummary {
@@ -28,6 +30,8 @@ export interface PracticeFilters {
   subject: SubjectId;
   topic: TopicId | "todos";
   difficulty: Difficulty | "todas";
+  /** Origem das questões: todas, só oficiais verificadas ou só de prática. Ausente = todas. */
+  origin?: "todas" | "oficiais" | "pratica";
 }
 
 /** Lista de prática em andamento — permite retomar de onde parou. */

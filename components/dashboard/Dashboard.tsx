@@ -8,14 +8,16 @@ import { Notice } from "@/components/ui/Notice";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { LoadingState } from "@/components/ui/States";
 import { SUBJECTS, getSubject, topicName } from "@/data/subjects";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import { useStartPractice } from "@/hooks/useStartPractice";
 import { useStudyData } from "@/hooks/useStudyData";
 import { formatRelativeDateTime, plural } from "@/lib/format";
 import { overallStats, reviewSuggestions, statsBySubject, studyStreak, uniqueQuestionsAnswered } from "@/lib/history";
-import { filterQuestions, questionBank } from "@/lib/questions/bank";
+import { filterQuestions } from "@/lib/questions/bank";
 import { ContinueCard } from "./ContinueCard";
 import { StatTile } from "./StatTile";
 import { SubjectCard } from "./SubjectCard";
+import { UpdateIndicator } from "./UpdateIndicator";
 
 function greeting(hour: number): string {
   if (hour < 12) return "Bom dia";
@@ -26,6 +28,7 @@ function greeting(hour: number): string {
 export function Dashboard() {
   const { state } = useStudyData();
   const startPractice = useStartPractice();
+  const questionBank = useQuestionBank();
 
   if (!state) return <LoadingState />;
 
@@ -51,6 +54,7 @@ export function Dashboard() {
         <p className="max-w-prose text-lg text-ink-soft">
           Que bom ter você aqui. Estudar um pouquinho todos os dias faz muita diferença na hora da prova.
         </p>
+        <UpdateIndicator />
       </section>
 
       {state.loadWarning === "corrompido" && (

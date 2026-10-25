@@ -9,6 +9,7 @@ import { EmptyState, LoadingState } from "@/components/ui/States";
 import { SUBJECT_STYLES } from "@/components/ui/subject-style";
 import { SUBJECTS, getSubject, topicName } from "@/data/subjects";
 import { getOfficialExam } from "@/data/official-exams";
+import { useQuestionBank } from "@/hooks/useQuestionBank";
 import { useStartPractice } from "@/hooks/useStartPractice";
 import { useStudyData } from "@/hooks/useStudyData";
 import { formatDuration, formatRelativeDateTime } from "@/lib/format";
@@ -20,7 +21,6 @@ import {
   statsByTopic,
   uniqueQuestionsAnswered,
 } from "@/lib/history";
-import { questionBank } from "@/lib/questions/bank";
 import { DataManagement } from "./DataManagement";
 import { EvolutionChart } from "./EvolutionChart";
 import { StatTile } from "./StatTile";
@@ -28,6 +28,7 @@ import { StatTile } from "./StatTile";
 export function PerformanceView() {
   const { state } = useStudyData();
   const startPractice = useStartPractice();
+  const questionBank = useQuestionBank();
 
   if (!state) return <LoadingState />;
 

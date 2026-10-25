@@ -1,5 +1,5 @@
 import { ALL_QUESTIONS, IMPORT_ERRORS } from "@/data/questions";
-import type { Difficulty, Question, SubjectId, TopicId } from "@/types/question";
+import type { ContentType, Difficulty, Question, SubjectId, TopicId } from "@/types/question";
 import { isScorable, validateQuestion } from "./validation";
 
 export interface RejectedQuestion {
@@ -51,6 +51,7 @@ export interface QuestionFilters {
   difficulty?: Difficulty | "todas";
   /** Lista de disciplinas (usada nos simulados). Vazia = todas. */
   subjects?: readonly SubjectId[];
+  contentType?: ContentType;
 }
 
 export function filterQuestions(questions: readonly Question[], filters: QuestionFilters): Question[] {
@@ -59,6 +60,7 @@ export function filterQuestions(questions: readonly Question[], filters: Questio
     if (filters.subjects && filters.subjects.length > 0 && !filters.subjects.includes(question.subject)) return false;
     if (filters.topic && filters.topic !== "todos" && question.topic !== filters.topic) return false;
     if (filters.difficulty && filters.difficulty !== "todas" && question.difficulty !== filters.difficulty) return false;
+    if (filters.contentType && question.contentType !== filters.contentType) return false;
     return true;
   });
 }
