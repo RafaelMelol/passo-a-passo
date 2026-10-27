@@ -45,6 +45,7 @@ No Windows, o Git abre uma janela do navegador para você entrar na sua conta do
    um sufixo. Você pode trocar o nome do projeto em **Settings → General** **antes** de passar o link para sua mãe.
 7. *(Opcional)* Para ligar o coletor diário de provas oficiais, siga a seção "Agendamento diário" do
    [COLETOR.md](COLETOR.md). Ela explica como criar o banco gratuito, cadastrar as variáveis e fazer um novo deploy.
+   O script `scripts/configurar-vercel.ps1` cadastra as variáveis para você.
    - Sem isso, o site de estudos funciona normalmente, só sem as provas coletadas automaticamente.
    - Também sem isso, o painel `/admin` e o agendamento ficam desligados: as rotas respondem "não configurado".
 

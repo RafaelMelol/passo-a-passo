@@ -14,9 +14,24 @@ export interface SqlClient {
   readonly kind: "postgres" | "pglite";
 }
 
+/**
+ * O `pg` já trata sslmode=prefer/require/verify-ca como verify-full, mas avisa a cada conexão que isso vai mudar.
+ * Deixar verify-full explícito mantém a verificação completa do certificado e silencia o aviso.
+ * Quem pediu a semântica do libpq (`uselibpqcompat=true`) fica como está.
+ */
+export function withExplicitSslMode(connectionString: string): string {
+  if (/[?&]uselibpqcompat=true(&|$)/i.test(connectionString)) return connectionString;
+  return connectionString.replace(/([?&]sslmode=)(prefer|require|verify-ca)(?=&|$)/i, "$1verify-full");
+}
+
 export async function createPgClient(connectionString: string): Promise<SqlClient> {
   const { Pool } = await import("pg");
-  const pool = new Pool({ connectionString, max: 3, idleTimeoutMillis: 10_000, connectionTimeoutMillis: 10_000 });
+  const pool = new Pool({
+    connectionString: withExplicitSslMode(connectionString),
+    max: 3,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
+  });
 
   function wrap(runner: { query: (sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }> }, inTransaction: boolean): SqlClient {
     const client: SqlClient = {

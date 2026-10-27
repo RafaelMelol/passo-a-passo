@@ -147,10 +147,31 @@ O agendamento escolhido é o **Vercel Cron**, por ser o mais simples para o ambi
 - Uma fonte com falha não interrompe as outras e espera 6 h, 12 h, 24 h… (até 72 h) antes da próxima tentativa agendada.
 - Dia sem novidades: a execução é registrada como bem-sucedida, sem nada inventado.
 
-**Para ativar:**
-1. Cadastre `DATABASE_URL`, `CRON_SECRET`, `ADMIN_PASSWORD` e `ADMIN_SESSION_SECRET` em **Settings → Environment Variables**.
-2. Faça um novo deploy.
-3. Confira em **Settings → Cron Jobs**.
+**Para ativar** (o projeto já precisa estar importado na Vercel):
+1. Na Vercel, abra o projeto → **Storage → Create Database → Neon** e conecte ao projeto. Isso cria `DATABASE_URL`.
+2. No terminal, na pasta do projeto:
+
+```bash
+npx.cmd vercel@63.1.2 login
+```
+
+```bash
+npx.cmd vercel@63.1.2 link
+```
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/configurar-vercel.ps1
+```
+
+   O script [scripts/configurar-vercel.ps1](scripts/configurar-vercel.ps1) cadastra em produção:
+   - `ADMIN_PASSWORD`, digitada por você sem aparecer na tela;
+   - `ADMIN_SESSION_SECRET` e `CRON_SECRET`, gerados com gerador criptográfico e nunca exibidos;
+   - `CRAWLER_TIMEZONE` e `CRAWLER_DAILY_HOUR`.
+
+   Os segredos ficam marcados como sensíveis. Com `-Simular`, o script mostra o que faria sem falar com a Vercel.
+   Sem o script, dá para cadastrar as mesmas variáveis à mão em **Settings → Environment Variables**.
+3. Faça um novo deploy (**Deployments → Redeploy**, ou envie um commit).
+4. Confira em **Settings → Cron Jobs**.
 
 No plano Hobby, cron jobs rodam no máximo uma vez por dia, e o horário pode variar dentro da hora marcada.
 
