@@ -43,7 +43,13 @@ export interface PracticeDraft {
   explanation: QuestionExplanation;
 }
 
-export function definePracticeQuestions(subject: SubjectId, drafts: PracticeDraft[]): Question[] {
+/** `checkedAt` registra quando o lote foi conferido (padrão: data do primeiro lote). */
+export function definePracticeQuestions(
+  subject: SubjectId,
+  drafts: PracticeDraft[],
+  { checkedAt }: { checkedAt?: string } = {},
+): Question[] {
+  const verification = checkedAt ? { ...PRACTICE_VERIFICATION, checkedAt } : PRACTICE_VERIFICATION;
   return drafts.map((draft) => {
     const options = draft.options.map((option, index) => ({
       letter: OPTION_LETTERS[index],
@@ -67,9 +73,9 @@ export function definePracticeQuestions(subject: SubjectId, drafts: PracticeDraf
       source: PRACTICE_SOURCE,
       // Rascunho com zero ou várias respostas certas fica pendente e não é usado.
       verification: hasSingleAnswer
-        ? PRACTICE_VERIFICATION
+        ? verification
         : {
-            ...PRACTICE_VERIFICATION,
+            ...verification,
             answerKey: "pendente",
             notes: `Rascunho inválido: ${correctIndexes.length} alternativas marcadas como corretas.`,
           },

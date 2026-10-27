@@ -68,7 +68,7 @@ permitem coleta automatizada (hoje: Inep/Encceja), confere o gabarito oficial co
 
 | Conteúdo | Origem | Situação |
 |---|---|---|
-| 138 questões de prática | Escritas para este site (textos de apoio também). Identificadas como **"Questão de prática"**, sem banca, concurso ou órgão. | Gabarito e explicações revisados; integridade conferida por testes |
+| 174 questões de prática | Escritas para este site (textos de apoio também). Identificadas como **"Questão de prática"**, sem banca, concurso ou órgão. Lotes novos ficam em `data/questions/lote-AAAA-MM.ts`. | Gabarito e explicações revisados; integridade conferida por testes |
 | FGV — Fundação Pró-Sangue 2013, Auxiliar de Serviços Gerais (nível fundamental, 50 questões) | [Página oficial](https://conhecimento.fgv.br/concursos/fps/nivelmedio-fundamental) · [caderno Tipo 1](https://conhecimento.fgv.br/sites/default/files/concursos/pro-sangue_2013_nf_auxiliar_de_servicos_gerais_tipo_01.pdf) · [gabarito definitivo](https://conhecimento.fgv.br/sites/default/files/concursos/prosanguenmf_gabarito_definitivo_todos.pdf) | Gabarito definitivo transcrito e conferido em 23/10/2026; igual ao preliminar, sem anulações |
 | FGV — IBGE 2022, Recenseador (nível fundamental, 50 questões) | [Página oficial](https://conhecimento.fgv.br/concursos/ibgepss21/10) · [caderno Tipo 1](https://conhecimento.fgv.br/sites/default/files/concursos/recenseador_-_caderno_tipo_01_-_internet_0.pdf) · [gabarito definitivo](https://conhecimento.fgv.br/sites/default/files/concursos/ibge2021_gabarito_definitivo_rec.pdf) | Conferido em 23/10/2026; **questão 17 anulada** no definitivo (era E no preliminar). O PDF definitivo traz "preliminar" no cabeçalho — registrado no site |
 

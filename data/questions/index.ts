@@ -2,6 +2,7 @@ import { parseQuestionList } from "@/lib/questions/parse";
 import type { Question } from "@/types/question";
 import importadas from "./importadas.json";
 import { informaticaQuestions } from "./informatica";
+import { lote202610Questions } from "./lote-2026-10";
 import { matematicaQuestions } from "./matematica";
 import { portuguesQuestions } from "./portugues";
 
@@ -19,5 +20,6 @@ export const ALL_QUESTIONS: readonly Question[] = [
   ...portuguesQuestions,
   ...matematicaQuestions,
   ...informaticaQuestions,
+  ...lote202610Questions,
   ...imported.questions,
 ];
