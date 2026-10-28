@@ -155,7 +155,7 @@ export function SimuladoSetup() {
             </label>
           </div>
           {!mixAll && (
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               {SUBJECTS.map((subject) => {
                 const style = SUBJECT_STYLES[subject.id];
                 const Icon = style.icon;

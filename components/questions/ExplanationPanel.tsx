@@ -11,6 +11,7 @@ const STEPS_TITLE: Record<Question["subject"], string> = {
   matematica: "Cálculo passo a passo",
   portugues: "Passo a passo",
   informatica: "Passo a passo",
+  "conhecimentos-gerais": "Passo a passo",
 };
 
 export function ExplanationPanel({ question, selected, id }: ExplanationPanelProps) {

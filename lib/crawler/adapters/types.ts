@@ -28,6 +28,8 @@ export interface AdapterContext {
   downloadsLeft: () => number;
   /** Quantos documentos ligados a esta página falharam ou foram devolvidos para a fila e aguardam nova tentativa. */
   failedChildren(parentUrl: string): Promise<number>;
+  /** Quantos cadernos já foram encontrados a partir desta página. */
+  bookletChildren(parentUrl: string): Promise<number>;
 }
 
 /**

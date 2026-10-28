@@ -69,7 +69,7 @@ export function validateExamCandidate(candidate: ExamCandidate, source: SourceCo
   let confidence = 1;
 
   if (!booklet.sections.some((section) => section.subject)) {
-    return skip("O caderno não tem seções de Português, Matemática ou Informática.");
+    return skip("O caderno não tem seções de Português, Matemática, Informática ou Conhecimentos gerais.");
   }
   if (candidate.educationLevel === "desconhecido") {
     reviews.push({ reason: "nivel_nao_confirmado", details: "A escolaridade exigida não foi confirmada nos documentos.", priority: 2 });

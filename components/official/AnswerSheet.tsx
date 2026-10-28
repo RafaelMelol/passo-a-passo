@@ -337,7 +337,7 @@ function AnswerSheetView({ exam, grade: gradeWith }: { exam: SheetExam; grade: G
                   <span className="text-ink-soft">
                     {" "}
                     · questões {section.firstQuestion} a {section.lastQuestion}
-                    {!section.subject && " (não faz parte das 3 disciplinas do site)"}
+                    {!section.subject && " (não faz parte das disciplinas do site)"}
                   </span>
                 </span>
               </label>

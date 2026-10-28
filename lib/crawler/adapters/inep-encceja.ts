@@ -4,15 +4,45 @@ import { foldText } from "../normalizers/text";
 import { parseAnswerKeyPages } from "../parsers/answer-key";
 import { parseBookletPages } from "../parsers/booklet";
 import { extractPdfPages } from "../parsers/pdf-text";
+import type { SubjectId } from "@/types/question";
 import type { ExamCandidate, ParsedAnswerKey } from "../types";
 import type { AdapterContext, SourceAdapter } from "./types";
 
 /**
  * Adaptador do Inep (Encceja Ensino Fundamental).
- * Fluxo: página oficial de provas e gabaritos → páginas por ano → para cada área de
- * Matemática e Língua Portuguesa, o caderno ("Prova") e o gabarito oficial.
+ * Fluxo: página oficial de provas e gabaritos → páginas por ano → para cada área
+ * (Matemática, Língua Portuguesa, Ciências Naturais, História e Geografia), o caderno ("Prova")
+ * e o gabarito oficial. Ciências e História/Geografia entram no site como Conhecimentos gerais.
  * Variantes acessíveis (ampliada, ledor, Libras) são ignoradas para não duplicar a mesma prova.
  */
+
+type InepArea = "matematica" | "portugues" | "ciencias" | "historia-geografia";
+
+const AREAS: Record<InepArea, { match: RegExp; heading: { title: string; subject: SubjectId }; name: string; note?: string }> = {
+  matematica: { match: /matematica/, heading: { title: "Matemática", subject: "matematica" }, name: "Matemática" },
+  portugues: {
+    match: /lingua portuguesa/,
+    heading: { title: "Língua Portuguesa (com língua estrangeira, artes e educação física)", subject: "portugues" },
+    name: "Língua Portuguesa e Linguagens",
+    note: "A área de Linguagens do Encceja também traz questões de língua estrangeira, artes e educação física.",
+  },
+  ciencias: {
+    match: /ciencias naturais/,
+    heading: { title: "Ciências Naturais", subject: "conhecimentos-gerais" },
+    name: "Ciências Naturais",
+    note: "No site, a área de Ciências Naturais do Encceja faz parte de Conhecimentos gerais.",
+  },
+  "historia-geografia": {
+    match: /historia e geografia/,
+    heading: { title: "História e Geografia", subject: "conhecimentos-gerais" },
+    name: "História e Geografia",
+    note: "No site, a área de História e Geografia do Encceja faz parte de Conhecimentos gerais.",
+  },
+};
+
+function areaOf(foldedAreaName: string): InepArea | "outra" {
+  return (Object.keys(AREAS) as InepArea[]).find((area) => AREAS[area].match.test(foldedAreaName)) ?? "outra";
+}
 
 export interface InepYearLink {
   year: number;
@@ -23,7 +53,7 @@ export interface InepExamGroup {
   year: number;
   title: string;
   level: "fundamental" | "medio" | "outro";
-  area: "matematica" | "portugues" | "outra";
+  area: InepArea | "outra";
   areaName: string;
   application: string;
   bookletUrl: string | null;
@@ -81,7 +111,7 @@ export function parseInepYearPage(html: string, baseUrl: string, year: number): 
         year,
         title,
         level: folded.startsWith("ensino fundamental") ? "fundamental" : folded.startsWith("ensino medio") ? "medio" : "outro",
-        area: areaPart.includes("matematica") ? "matematica" : areaPart.includes("lingua portuguesa") ? "portugues" : "outra",
+        area: areaOf(areaPart),
         areaName: cleanText(parts[1] ?? ""),
         application: cleanText(parts[2] ?? currentHeading ?? ""),
         bookletUrl: null,
@@ -114,16 +144,24 @@ function daysSince(iso: string | null, now: Date): number {
   return (now.getTime() - Date.parse(iso)) / 86_400_000;
 }
 
-async function chooseYearPages(context: AdapterContext, years: InepYearLink[]): Promise<InepYearLink[]> {
+/**
+ * Quando o adaptador passou a ler Ciências Naturais e História e Geografia. Anos com cadernos conferidos
+ * antes disso são revisitados primeiro, uma vez, para encontrar as provas dessas áreas.
+ */
+const AREAS_EXPANDED_AT = Date.parse("2026-10-28T00:00:00Z");
+
+export async function chooseYearPages(context: AdapterContext, years: InepYearLink[]): Promise<InepYearLink[]> {
   // Sempre os dois anos mais recentes; depois, anos com documentos que falharam (nova tentativa),
-  // os nunca vistos e os conferidos há mais tempo.
+  // anos com cadernos que ainda não foram lidos com as áreas novas, os nunca vistos e os conferidos há mais tempo.
   const chosen = years.slice(0, 2);
-  const rest: { link: InepYearLink; checked: number; failed: number }[] = [];
+  const rest: { link: InepYearLink; checked: number; failed: number; revisit: boolean }[] = [];
   for (const link of years.slice(2)) {
     const status = await context.documentStatus(link.url);
-    rest.push({ link, checked: status?.lastCheckedAt ? Date.parse(status.lastCheckedAt) : 0, failed: await context.failedChildren(link.url) });
+    const checked = status?.lastCheckedAt ? Date.parse(status.lastCheckedAt) : 0;
+    const revisit = checked > 0 && checked < AREAS_EXPANDED_AT && (await context.bookletChildren(link.url)) > 0;
+    rest.push({ link, checked, failed: await context.failedChildren(link.url), revisit });
   }
-  rest.sort((a, b) => b.failed - a.failed || a.checked - b.checked);
+  rest.sort((a, b) => b.failed - a.failed || Number(b.revisit) - Number(a.revisit) || a.checked - b.checked);
   return [...chosen, ...rest.map((item) => item.link)].slice(0, MAX_YEAR_PAGES_PER_RUN);
 }
 
@@ -209,10 +247,9 @@ async function readGroup(context: AdapterContext, group: InepExamGroup, yearUrl:
     parentUrl: yearUrl,
   });
 
-  const areaHeading =
-    group.area === "matematica"
-      ? { title: "Matemática", subject: "matematica" as const }
-      : { title: "Língua Portuguesa (com língua estrangeira, artes e educação física)", subject: "portugues" as const };
+  if (group.area === "outra") throw new Error("Área do Encceja não usada pelo site.");
+  const area = AREAS[group.area];
+  const areaHeading = area.heading;
   const keyDocument = parseAnswerKeyPages(await extractPdfPages(key.resource.body), group.areaName);
   const bookletContent = parseBookletPages(await extractPdfPages(bookletFetch.resource.body), { defaultSection: areaHeading, defaultOptionCount: 4 });
 
@@ -233,7 +270,7 @@ async function readGroup(context: AdapterContext, group: InepExamGroup, yearUrl:
   return {
     sourceId: context.source.id,
     dedupeKey: `inep-encceja|${group.year}|${foldText(group.application)}|fundamental|${group.area}`,
-    title: `Encceja ${group.year} — ${group.application || "Aplicação regular"} — Ensino Fundamental — ${group.area === "matematica" ? "Matemática" : "Língua Portuguesa e Linguagens"}`,
+    title: `Encceja ${group.year} — ${group.application || "Aplicação regular"} — Ensino Fundamental — ${area.name}`,
     examBoard: "Inep",
     organization: context.source.organization,
     role: `Exame de certificação do Ensino Fundamental (${group.application || "aplicação regular"})`,
@@ -245,9 +282,9 @@ async function readGroup(context: AdapterContext, group: InepExamGroup, yearUrl:
     booklet: { ...bookletContent, url: bookletFetch.resource.url, sha256: bookletFetch.resource.sha256 },
     answerKey,
     answerKeyHasText: keyDocument.hasText,
+    answerKeyDocumentUrl: key.resource.url,
     laterRectifications: [],
-    sectionNotes:
-      group.area === "portugues" ? ["A área de Linguagens do Encceja também traz questões de língua estrangeira, artes e educação física."] : [],
+    sectionNotes: area.note ? [area.note] : [],
     warnings: [...keyDocument.warnings],
   };
 }

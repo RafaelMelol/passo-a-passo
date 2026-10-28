@@ -2,6 +2,7 @@ import "server-only";
 import { topicName } from "@/data/subjects";
 import type { SqlClient } from "@/lib/server/db/client";
 import {
+  countBookletChildren,
   countFailedChildren,
   getDocumentByUrl,
   markDocumentFailed,
@@ -137,7 +138,9 @@ export async function processCandidate(
   }
   await dismissResolvedReviews(db, "exam", result.examId, decision.reviews.map((review) => review.reason), now);
 
-  for (const url of [candidate.bookletUrl, candidate.answerKey?.url, candidate.preliminaryKey?.url]) {
+  // O gabarito escaneado também conta como processado: a prova já está na fila de revisão,
+  // e baixá-lo de novo a cada coleta só gastaria o limite de downloads.
+  for (const url of new Set([candidate.bookletUrl, candidate.answerKey?.url, candidate.preliminaryKey?.url, candidate.answerKeyDocumentUrl])) {
     if (url) await markDocumentProcessed(db, url, now);
   }
 
@@ -175,6 +178,7 @@ export function createAdapterContext(input: {
     warn: (message) => input.warnings.push(`[${input.source.id}] ${message}`),
     downloadsLeft: () => input.source.rateLimit.maxDownloadsPerRun - downloads,
     failedChildren: (parentUrl) => countFailedChildren(input.db, parentUrl),
+    bookletChildren: (parentUrl) => countBookletChildren(input.db, parentUrl),
     async documentStatus(url) {
       const document = await getDocumentByUrl(input.db, url);
       return document ? { status: document.status, processedAt: document.processedAt, lastCheckedAt: document.lastCheckedAt } : null;

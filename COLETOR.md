@@ -53,8 +53,14 @@ Verificações feitas em 25/10/2026.
 | IBFC | Desativada | O site recusou acessos automatizados identificados (HTTP 403). O coletor não contorna bloqueios. |
 
 **Por que o Inep, se não é um concurso?** Era a única fonte oficial verificada que permite coleta automatizada **e** publica
-cadernos e gabaritos de nível fundamental. O Encceja certifica justamente o ensino fundamental, e as áreas de Matemática e
-Língua Portuguesa têm o nível certo para a prova da sua mãe.
+cadernos e gabaritos de nível fundamental. O Encceja certifica justamente o ensino fundamental e tem o nível certo para a
+prova da sua mãe. O coletor lê as quatro áreas:
+- Matemática;
+- Língua Portuguesa;
+- Ciências Naturais e História e Geografia, que no site entram como **Conhecimentos gerais** (desde 28/10/2026).
+
+A prova FGV/Pró-Sangue 2013, cadastrada à mão, também tem a seção de Conhecimentos Gerais (questões 41 a 45) ligada à
+disciplina.
 
 **O que é guardado.** Mesmo com a licença CC BY-ND, os cadernos trazem textos e imagens de terceiros não cobertos por ela.
 Por isso, para todas as fontes, o banco central guarda só:
@@ -294,14 +300,29 @@ Executadas contra os sites reais do Inep, com o banco embutido local (`.data/pgl
   - O JSON público das provas não contém o gabarito.
   - A correção do cartão-resposta pelo servidor deu o resultado esperado.
 
+**Em 28/10/2026, com as áreas de Conhecimentos gerais** (cinco execuções pela linha de comando, no banco local):
+- **Publicadas, 7 provas:**
+  - 2018: Ciências Naturais (aplicação regular e reaplicação/PPL) e História e Geografia (PPL);
+  - 2020: Ciências Naturais e História e Geografia, nas duas aplicações.
+- **Na fila de revisão:** História e Geografia 2018 (aplicação regular), porque o gabarito é escaneado (`sem_texto_no_pdf`).
+- **Conferência:** os gabaritos de 2020 da aplicação regular (Ciências Naturais 1–30 e História e Geografia 31–60) foram
+  comparados com os PDFs oficiais lidos como imagem e bateram nas 60 questões.
+- **Ajustes feitos a partir dessas coletas:**
+  - Um gabarito escaneado passa a contar como processado, porque a prova já fica na fila de revisão. Antes, ele era baixado
+    de novo a cada visita e gastava o limite de downloads.
+  - Anos com cadernos lidos antes da inclusão das áreas novas são revisitados primeiro, uma vez.
+  - O assunto passa a respeitar a seção: em Ciências Naturais, só "Ciências e saúde" ou "Meio ambiente".
+
 ## 12. Limitações e pendências para produção
 
 - **Banco e agendamento não implantados ainda.** Falta criar o PostgreSQL, cadastrar as variáveis e fazer o deploy.
 - **Uma fonte automática.** Novas fontes precisam de verificação de termos/robots.txt e de um adaptador.
-- **Sem OCR.** Gabaritos ou cadernos escaneados vão para a fila de revisão. Exemplo real: o gabarito regular de Matemática do
-  Encceja 2018.
-- **Classificação estimada.** Assunto e dificuldade são aproximados (regras). A área de Linguagens do Encceja inclui língua
-  estrangeira, artes e educação física, então muitas questões ficam sem assunto.
+- **Sem OCR.** Gabaritos ou cadernos escaneados vão para a fila de revisão. Exemplos reais: os gabaritos de Matemática e de
+  História e Geografia do Encceja 2018 (aplicação regular).
+- **Classificação estimada.** Assunto e dificuldade são aproximados (regras).
+  - A área de Linguagens do Encceja inclui língua estrangeira, artes e educação física.
+  - Ciências Naturais inclui física e química, que não são assuntos de Conhecimentos gerais no site.
+  - Por isso muitas questões ficam sem assunto, o que é melhor do que um assunto errado.
 - **Sem dificuldade observada.** O desempenho real das usuárias fica no navegador, então não é usado para estimar a
   dificuldade.
 - **Rotação de anos.** O Inep tem cadernos só em algumas edições. O coletor percorre os anos aos poucos (até 4 páginas de ano

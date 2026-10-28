@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Passo a Passo · Estudos para concurso",
     short_name: "Passo a Passo",
-    description: "Português, Matemática e Informática para concursos de nível fundamental.",
+    description: "Português, Matemática, Informática e Conhecimentos gerais para concursos de nível fundamental.",
     lang: "pt-BR",
     start_url: "/",
     scope: "/",

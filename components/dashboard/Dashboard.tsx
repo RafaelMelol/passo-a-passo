@@ -147,7 +147,7 @@ export function Dashboard() {
         <h2 id="disciplinas-titulo" className="text-xl font-bold">
           Disciplinas
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {SUBJECTS.map((subject) => {
             const subjectQuestions = filterQuestions(questionBank.questions, { subject: subject.id });
             const subjectIds = new Set(subjectQuestions.map((question) => question.id));
@@ -169,7 +169,7 @@ export function Dashboard() {
           <CardTitle>Como funciona</CardTitle>
           <ol className="grid gap-4 sm:grid-cols-3">
             {[
-              ["Escolha o assunto", "Português, Matemática ou Informática, no nível que preferir."],
+              ["Escolha o assunto", "Português, Matemática, Informática ou Conhecimentos gerais, no nível que preferir."],
               ["Responda com calma", "Uma questão por vez. Depois de responder, veja se acertou."],
               ["Entenda a resposta", "Cada questão tem explicação simples e, em Matemática, a conta passo a passo."],
             ].map(([title, text], index) => (

@@ -122,6 +122,12 @@ export async function countFailedChildren(db: SqlClient, parentUrl: string): Pro
   return toNumber(rows[0]?.n);
 }
 
+/** Quantos cadernos de prova já foram encontrados a partir de uma página (indica que o ano tem provas publicadas). */
+export async function countBookletChildren(db: SqlClient, parentUrl: string): Promise<number> {
+  const rows = await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM documents WHERE parent_url = $1 AND kind = 'booklet'`, [parentUrl]);
+  return toNumber(rows[0]?.n);
+}
+
 /** Reprocessar: volta documentos com falha para "descoberto", para a próxima execução tentar de novo. */
 export async function resetFailedDocuments(db: SqlClient, ids?: readonly number[]): Promise<number> {
   const rows = ids && ids.length > 0

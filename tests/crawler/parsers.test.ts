@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { parseInepIndex, parseInepYearPage } from "@/lib/crawler/adapters/inep-encceja";
+import { chooseYearPages, parseInepIndex, parseInepYearPage } from "@/lib/crawler/adapters/inep-encceja";
+import type { AdapterContext } from "@/lib/crawler/adapters/types";
 import { isContiguous, parseAnswerKeyPages } from "@/lib/crawler/parsers/answer-key";
 import { matchSectionHeading, parseBookletPages } from "@/lib/crawler/parsers/booklet";
 import { extractPdfPages } from "@/lib/crawler/parsers/pdf-text";
@@ -126,9 +127,47 @@ describe("caderno de prova em PDF", () => {
 
   it("reconhece títulos de seção e recusa frases comuns", () => {
     expect(matchSectionHeading("Noções de Informática")).toEqual({ title: "Informática", subject: "informatica" });
-    expect(matchSectionHeading("Conhecimentos Gerais")).toEqual({ title: "Conhecimentos Gerais" });
+    expect(matchSectionHeading("Conhecimentos Gerais")).toEqual({ title: "Conhecimentos Gerais", subject: "conhecimentos-gerais" });
+    expect(matchSectionHeading("CIÊNCIAS NATURAIS")).toEqual({ title: "Ciências Naturais", subject: "conhecimentos-gerais" });
+    expect(matchSectionHeading("História e Geografia")).toEqual({ title: "História e Geografia", subject: "conhecimentos-gerais" });
+    expect(matchSectionHeading("Conhecimentos Específicos")).toEqual({ title: "Conhecimentos Específicos" });
     expect(matchSectionHeading("língua portuguesa sobre o tema do texto")).toBeNull();
     expect(matchSectionHeading("Matemática 2020")).toBeNull();
+  });
+});
+
+describe("rodízio de anos do Inep", () => {
+  const years = [2026, 2025, 2024, 2023, 2020, 2018, 2017].map((year) => ({ year, url: `https://www.gov.br/inep/encceja/${year}` }));
+
+  function fakeContext(pages: Record<number, { checked?: string; booklets?: number; failed?: number }>): AdapterContext {
+    const byUrl = (url: string) => pages[Number(url.split("/").pop())] ?? {};
+    return {
+      documentStatus: async (url: string) => {
+        const page = byUrl(url);
+        return page.checked ? { status: "processed", processedAt: page.checked, lastCheckedAt: page.checked } : null;
+      },
+      failedChildren: async (url: string) => byUrl(url).failed ?? 0,
+      bookletChildren: async (url: string) => byUrl(url).booklets ?? 0,
+    } as unknown as AdapterContext;
+  }
+
+  it("revisita primeiro os anos com cadernos lidos antes das áreas novas, depois os nunca vistos", async () => {
+    const chosen = await chooseYearPages(
+      fakeContext({
+        2024: { checked: "2026-10-25T10:00:00Z" },
+        2023: { checked: "2026-10-25T10:00:00Z" },
+        2020: { checked: "2026-10-25T10:00:00Z", booklets: 4 },
+        2018: { checked: "2026-10-28T19:00:00Z", booklets: 8 },
+      }),
+      years,
+    );
+    // 2026 e 2025 sempre; 2020 tem cadernos e foi lido antes da mudança; 2017 nunca foi visitado.
+    expect(chosen.map((link) => link.year)).toEqual([2026, 2025, 2020, 2017]);
+  });
+
+  it("anos com documentos que falharam continuam na frente", async () => {
+    const chosen = await chooseYearPages(fakeContext({ 2023: { checked: "2026-10-29T10:00:00Z", failed: 2 }, 2020: { checked: "2026-10-25T10:00:00Z", booklets: 4 } }), years);
+    expect(chosen.map((link) => link.year)).toEqual([2026, 2025, 2023, 2020]);
   });
 });
 
@@ -141,7 +180,7 @@ describe("páginas do Inep (HTML)", () => {
     const groups = parseInepYearPage(INEP_YEAR_HTML, INEP_YEAR, 2020);
     expect(groups.map((group) => [group.level, group.area, Boolean(group.bookletUrl), Boolean(group.answerKeyUrl)])).toEqual([
       ["fundamental", "matematica", true, true],
-      ["fundamental", "outra", true, true],
+      ["fundamental", "ciencias", true, true],
       ["medio", "matematica", true, true],
       ["fundamental", "portugues", false, true],
     ]);

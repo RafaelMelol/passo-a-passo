@@ -72,7 +72,7 @@ export function StudySetup() {
       <Card>
         <fieldset className="space-y-3">
           <legend className="mb-3 text-xl font-bold">1. Escolha a disciplina</legend>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {SUBJECTS.map((item) => {
               const style = SUBJECT_STYLES[item.id];
               const Icon = style.icon;

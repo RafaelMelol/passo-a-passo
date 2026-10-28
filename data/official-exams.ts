@@ -68,6 +68,16 @@ const FPS_2013_TAGS: Record<number, TopicTag> = {
   38: ["raciocinio-logico", "Sequências"],
   39: ["fracoes-decimais", "Números decimais"],
   40: ["medidas", "Volume e proporção"],
+  41: ["meio-ambiente", "Descarte de resíduos de saúde"],
+  42: ["ciencias-saude", "Pesquisas com células-tronco"],
+  43: ["cidadania", "Direitos dos empregados domésticos"],
+  44: ["geografia-brasil", "Exportações do Brasil"],
+  45: ["ciencias-saude", "Doação de sangue"],
+  46: ["cidadania", "Saúde na Constituição Federal"],
+  47: [null, "Política Nacional de Sangue"],
+  48: [null, "Estrutura da Fundação Pró-Sangue"],
+  49: ["cidadania", "Saúde como direito (Constituição)"],
+  50: ["cidadania", "Diretrizes do SUS"],
 };
 
 const IBGE_2022_TAGS: Record<number, TopicTag> = {
@@ -115,7 +125,8 @@ export const OFFICIAL_EXAMS: readonly OfficialExam[] = [
     sections: [
       { id: "portugues", title: "Língua Portuguesa", subject: "portugues", firstQuestion: 1, lastQuestion: 20 },
       { id: "matematica", title: "Matemática", subject: "matematica", firstQuestion: 21, lastQuestion: 40 },
-      { id: "conhecimentos-gerais", title: "Conhecimentos Gerais", firstQuestion: 41, lastQuestion: 50 },
+      { id: "conhecimentos-gerais", title: "Conhecimentos Gerais", subject: "conhecimentos-gerais", firstQuestion: 41, lastQuestion: 45 },
+      { id: "legislacao-institucional", title: "Legislação Institucional", firstQuestion: 46, lastQuestion: 50 },
     ],
     answerKey: buildAnswerKey(
       "CBEEBADCAEDACDDCADBC" + "ECEADDDCBBCAECBDAADE" + "EBACDCBDAD",
@@ -129,7 +140,8 @@ export const OFFICIAL_EXAMS: readonly OfficialExam[] = [
       notes: [
         "Gabarito definitivo publicado em 22/10/2013. Para este cargo, ele é igual ao preliminar e não tem questões anuladas.",
         "Use o caderno Tipo 1 (Branca). O gabarito vale só para esse tipo de caderno.",
-        "Distribuição: Português (1 a 20), Matemática (21 a 40) e Conhecimentos Gerais (41 a 50).",
+        "Distribuição: Português (1 a 20), Matemática (21 a 40), Conhecimentos Gerais (41 a 45) e Legislação Institucional (46 a 50).",
+        "Em 28/10/2026, a divisão das questões 41 a 50 foi conferida no caderno, e os assuntos foram ligados a Conhecimentos gerais. As questões 46, 49 e 50 tratam da Constituição e do SUS.",
       ],
     },
   },

@@ -1,4 +1,4 @@
-import { BookOpenText, Calculator, Monitor, type LucideIcon } from "lucide-react";
+import { BookOpenText, Calculator, Globe, Monitor, type LucideIcon } from "lucide-react";
 import type { SubjectId } from "@/types/question";
 
 /** Ícone e cores de cada disciplina (classes completas para o Tailwind encontrar). */
@@ -26,5 +26,12 @@ export const SUBJECT_STYLES: Record<
     soft: "bg-informatica-soft",
     bar: "bg-informatica",
     border: "border-informatica/30",
+  },
+  "conhecimentos-gerais": {
+    icon: Globe,
+    text: "text-conhecimentos",
+    soft: "bg-conhecimentos-soft",
+    bar: "bg-conhecimentos",
+    border: "border-conhecimentos/30",
   },
 };

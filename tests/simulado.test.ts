@@ -20,13 +20,12 @@ describe("createSimulado", () => {
   });
 
   it("mistura as disciplinas de forma equilibrada e agrupa por disciplina", () => {
-    const result = createSimulado(questionBank.questions, { ...baseConfig, questionCount: 9 }, seededRandom(7), NOW);
+    const order = ["portugues", "matematica", "informatica", "conhecimentos-gerais"];
+    const result = createSimulado(questionBank.questions, { ...baseConfig, questionCount: 12 }, seededRandom(7), NOW);
     if (!result.ok) throw new Error("deveria criar");
     const subjects = result.session.questionIds.map((id) => questionBank.byId.get(id)?.subject);
-    expect(subjects.filter((s) => s === "portugues")).toHaveLength(3);
-    expect(subjects.filter((s) => s === "matematica")).toHaveLength(3);
-    expect(subjects.filter((s) => s === "informatica")).toHaveLength(3);
-    expect(subjects).toEqual([...subjects].sort((a, b) => ["portugues", "matematica", "informatica"].indexOf(a!) - ["portugues", "matematica", "informatica"].indexOf(b!)));
+    for (const subject of order) expect(subjects.filter((s) => s === subject)).toHaveLength(3);
+    expect(subjects).toEqual([...subjects].sort((a, b) => order.indexOf(a!) - order.indexOf(b!)));
   });
 
   it("respeita a disciplina e a dificuldade escolhidas", () => {

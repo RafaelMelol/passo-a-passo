@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s · Passo a Passo",
   },
   description:
-    "Estude Português, Matemática e Informática para concursos de nível fundamental, com correção automática, explicações simples e acompanhamento do progresso.",
+    "Estude Português, Matemática, Informática e Conhecimentos gerais para concursos de nível fundamental, com correção automática, explicações simples e acompanhamento do progresso.",
   applicationName: "Passo a Passo",
   // No iPhone, abre em tela cheia quando adicionado à tela de início.
   appleWebApp: { capable: true, title: "Passo a Passo", statusBarStyle: "default" },

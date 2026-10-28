@@ -59,6 +59,18 @@ export const SUBJECTS = [
       { id: "arquivos-atalhos", name: "Arquivos, pastas e atalhos de teclado" },
     ],
   },
+  {
+    id: "conhecimentos-gerais",
+    name: "Conhecimentos gerais",
+    description: "História e geografia do Brasil, cidadania, saúde e meio ambiente.",
+    topics: [
+      { id: "historia-brasil", name: "História do Brasil" },
+      { id: "geografia-brasil", name: "Geografia do Brasil" },
+      { id: "cidadania", name: "Cidadania, direitos e Constituição" },
+      { id: "ciencias-saude", name: "Ciências e saúde (corpo humano, doenças e vacinas)" },
+      { id: "meio-ambiente", name: "Meio ambiente e sustentabilidade" },
+    ],
+  },
 ] as const satisfies readonly SubjectDefinition[];
 
 export type Subject = (typeof SUBJECTS)[number];

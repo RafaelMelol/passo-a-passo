@@ -48,6 +48,13 @@ const TOPIC_RULES: Record<SubjectId, Partial<Record<TopicId, Rule[]>>> = {
     "arquivos-atalhos": [[/atalho|ctrl\s?\+|alt\s?\+|extensao|pasta|arquivo|\.pdf|\.docx|renomear/, 3]],
     "conceitos-basicos": [[/byte|megabyte|gigabyte|download|upload|nuvem|armazenamento/, 3]],
   },
+  "conhecimentos-gerais": {
+    "historia-brasil": [[/colonia|colonial|imperio|imperador|republica|escrav|abolic|independencia|ditadura|vargas|bandeirante|capitanias|quilombo|historic/, 4], [/seculo|periodo|epoca/, 1]],
+    "geografia-brasil": [[/regiao|regioes|clima|relevo|bacia hidrografica|populacao|urbaniza|migra|mapa|cartograf|bioma|cerrado|caatinga|pantanal|territorio|exporta/, 4], [/\brio\b|agricultura|industria|cidade/, 1]],
+    cidadania: [[/constituic|direitos?\b|deveres|cidadan|estatuto|\bvoto|eleic|democracia|poder (executivo|legislativo|judiciario)|\bsus\b|trabalhista|consumidor/, 4]],
+    "ciencias-saude": [[/saude|doenca|vacina|virus|bacteria|corpo humano|celula|sangue|aliment|nutri|higiene|medicament|obesidade|sobrepeso|hidrat|sistema (digest|respirat|circulat|nervoso|imun)/, 4]],
+    "meio-ambiente": [[/meio ambiente|ambiental|poluic|recicla|desmatamento|sustentab|efeito estufa|aquecimento global|residuos?|\blixo|ecossistema|cadeia alimentar|energia (solar|eolica|renovavel)|cisterna|recursos hidricos|abastecimento (de agua|hidrico)/, 4]],
+  },
 };
 
 /** Conteúdos típicos de ensino médio/superior: só geram um alerta para revisão. */
@@ -69,13 +76,27 @@ export function subjectFromSection(title: string | undefined, sectionSubject?: S
   if (folded.includes("portugues")) return "portugues";
   if (folded.includes("matematica") || folded.includes("raciocinio")) return "matematica";
   if (folded.includes("informatica")) return "informatica";
+  if (/conhecimentos gerais|atualidades|ciencias (naturais|humanas)|historia|geografia/.test(folded)) return "conhecimentos-gerais";
   return null;
 }
 
-export function classifyTopic(subject: SubjectId, text: string): { topic: TopicId | null; confidence: number } {
+/** Seções temáticas só aceitam os assuntos que fazem sentido para elas (ex.: Ciências Naturais não vira Geografia). */
+const SECTION_TOPICS: [RegExp, readonly TopicId[]][] = [
+  [/ciencias naturais/, ["ciencias-saude", "meio-ambiente"]],
+  [/historia e geografia|ciencias humanas/, ["historia-brasil", "geografia-brasil", "cidadania", "meio-ambiente"]],
+];
+
+export function topicsForSection(title: string | undefined): readonly TopicId[] | undefined {
+  if (!title) return undefined;
+  const folded = foldText(title);
+  return SECTION_TOPICS.find(([pattern]) => pattern.test(folded))?.[1];
+}
+
+export function classifyTopic(subject: SubjectId, text: string, allowed?: readonly TopicId[]): { topic: TopicId | null; confidence: number } {
   const folded = foldText(text);
   const scores: [TopicId, number][] = [];
   for (const [topic, rules] of Object.entries(TOPIC_RULES[subject]) as [TopicId, Rule[]][]) {
+    if (allowed && !allowed.includes(topic)) continue;
     let score = 0;
     for (const [pattern, weight] of rules) if (pattern.test(folded)) score += weight;
     if (score > 0) scores.push([topic, score]);
@@ -116,7 +137,7 @@ export function levelFlags(text: string): string[] {
 
 export function classifyQuestion(input: { text: string; sectionTitle?: string; sectionSubject?: SubjectId; optionCount?: number }): ClassificationResult {
   const subject = subjectFromSection(input.sectionTitle, input.sectionSubject);
-  const topic = subject ? classifyTopic(subject, input.text) : { topic: null, confidence: 0 };
+  const topic = subject ? classifyTopic(subject, input.text, topicsForSection(input.sectionTitle)) : { topic: null, confidence: 0 };
   const difficulty = estimateDifficulty(input.text, input.optionCount);
   return {
     subject,

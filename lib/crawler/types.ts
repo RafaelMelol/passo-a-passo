@@ -115,6 +115,8 @@ export interface ExamCandidate {
   preliminaryKey?: ParsedAnswerKey | null;
   /** false quando o PDF do gabarito não tem texto selecionável (escaneado). */
   answerKeyHasText?: boolean;
+  /** Endereço do PDF do gabarito baixado, mesmo quando não foi possível lê-lo (para não baixá-lo de novo a cada coleta). */
+  answerKeyDocumentUrl?: string;
   /** Retificações publicadas depois do gabarito usado (exigem revisão humana). */
   laterRectifications: { url: string; title: string }[];
   sectionNotes?: string[];

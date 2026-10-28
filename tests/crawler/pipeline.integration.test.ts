@@ -29,17 +29,22 @@ import {
   testFetcher,
   type Route,
 } from "../helpers/crawler";
-import { inepAnswerKeyPdf, inepBookletPdf } from "../helpers/make-pdf";
+import { inepAnswerKeyPdf, inepBookletPdf, makePdf } from "../helpers/make-pdf";
 
 const DAY = 86_400_000;
 let db: SqlClient;
+
+// A maior parte dos testes usa só a área de Matemática; a de Ciências Naturais tem um teste próprio.
+const INEP_YEAR_MATH_ONLY = INEP_YEAR_HTML.replace(/<p class="callout"><strong>Ensino fundamental – Ciências naturais[^\n]*\n[^\n]*\n/, "");
+const INEP_CN_BOOKLET = "https://download.inep.gov.br/x/cn.pdf";
+const INEP_CN_KEY = "https://download.inep.gov.br/x/cn_gb.pdf";
 
 function inepRoutes(answers = "BCDAB"): Record<string, Route> {
   return {
     "https://www.gov.br/robots.txt": html("User-agent: *\nDisallow: /economia/"),
     "https://download.inep.gov.br/robots.txt": status(404),
     [INEP_INDEX]: html(INEP_INDEX_HTML),
-    [INEP_YEAR]: html(INEP_YEAR_HTML),
+    [INEP_YEAR]: html(INEP_YEAR_MATH_ONLY),
     [INEP_KEY]: pdf(inepAnswerKeyPdf(31, answers)),
     [INEP_BOOKLET]: pdf(inepBookletPdf(31, 5)),
   };
@@ -86,6 +91,29 @@ describe("importação ponta a ponta (fonte simulada do Inep)", () => {
     expect(stored[0].n).toBe(0);
     const hashes = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM questions WHERE statement_hash IS NOT NULL");
     expect(hashes[0].n).toBe(5);
+  });
+
+  it("coleta a área de Ciências Naturais como prova de Conhecimentos gerais", async () => {
+    expect(INEP_YEAR_MATH_ONLY).not.toContain("Ciências naturais");
+    const routes: Record<string, Route> = {
+      ...inepRoutes(),
+      [INEP_YEAR]: html(INEP_YEAR_HTML),
+      [INEP_CN_KEY]: pdf(inepAnswerKeyPdf(1, "ADCBA", "Ciências Naturais")),
+      [INEP_CN_BOOKLET]: pdf(
+        inepBookletPdf(1, 5, 4, (n) => `A vacina ${n} estimula o sistema imunológico a produzir defesas contra o vírus da doença.`, "Ciências Naturais"),
+      ),
+    };
+    const { outcome } = await crawl(routes, new Date("2026-10-25T06:00:00Z"));
+    if (outcome.status === "skipped") throw new Error("não deveria pular");
+    expect(outcome.stats).toMatchObject({ examsFound: 2, questionsPublished: 10 });
+
+    const published = await listPublishedExams(db, { limit: 10, offset: 0 }, new Date());
+    const cn = published.items.find((exam) => exam.bookletUrl === INEP_CN_BOOKLET);
+    expect(cn?.title).toContain("Ensino Fundamental — Ciências Naturais");
+    expect(cn?.sections.map((section) => section.subject)).toEqual(["conhecimentos-gerais"]);
+    expect((await getPublishedAnswerKey(db, cn!.id)).map((entry) => entry.answer).join("")).toBe("ADCBA");
+    const topics = await db.query<{ topic: string | null }>("SELECT DISTINCT topic FROM questions WHERE exam_id = $1", [cn!.id]);
+    expect(topics.map((row) => row.topic)).toEqual(["ciencias-saude"]);
   });
 
   it("rodar de novo não duplica provas nem questões (idempotente)", async () => {
@@ -314,5 +342,18 @@ describe("prazos", () => {
     const { calls } = await crawl(inepRoutes(), new Date(Date.parse("2026-10-25T06:00:00Z") + 5 * DAY));
     expect(calls).not.toContain(INEP_BOOKLET);
     expect(calls).not.toContain(INEP_KEY);
+  });
+
+  it("gabarito escaneado vai para revisão e não é baixado de novo a cada coleta", async () => {
+    const scanned = { ...inepRoutes(), [INEP_KEY]: pdf(makePdf([[]])) };
+    const first = await crawl(scanned, new Date("2026-10-25T06:00:00Z"));
+    if (first.outcome.status === "skipped") throw new Error("não deveria pular");
+    expect(first.outcome.stats.questionsPublished).toBe(0);
+    const reviews = await listReviews(db, { status: "open", limit: 10, offset: 0 });
+    expect(reviews.items.map((review) => review.reason)).toContain("sem_texto_no_pdf");
+
+    const { calls } = await crawl(scanned, new Date(Date.parse("2026-10-25T06:00:00Z") + 5 * DAY));
+    expect(calls).not.toContain(INEP_KEY);
+    expect(calls).not.toContain(INEP_BOOKLET);
   });
 });

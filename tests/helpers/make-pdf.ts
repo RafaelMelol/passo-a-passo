@@ -54,10 +54,10 @@ export function makePdf(pages: PdfTextLine[][], options: { width?: number; heigh
 }
 
 /** Gabarito no formato do Inep: "QUESTÕES GABARITO" e pares número/letra. */
-export function inepAnswerKeyPdf(first: number, answers: string): Uint8Array {
+export function inepAnswerKeyPdf(first: number, answers: string, area = "Matemática"): Uint8Array {
   const lines: PdfTextLine[] = [
     { x: 200, y: 800, text: "Ensino Fundamental" },
-    { x: 200, y: 785, text: "Matemática" },
+    { x: 200, y: 785, text: area },
     { x: 150, y: 760, text: "QUESTÕES" },
     { x: 260, y: 760, text: "GABARITO" },
   ];
@@ -70,9 +70,15 @@ export function inepAnswerKeyPdf(first: number, answers: string): Uint8Array {
 }
 
 /** Caderno no formato do Inep: título, número de página solto e "QUESTÃO N" com alternativas em trechos separados. */
-export function inepBookletPdf(first: number, count: number, options = 4, statement = (n: number) => `Uma loja vendeu ${n} cadernos por R$ 5,00 cada. Quanto recebeu no total?`): Uint8Array {
+export function inepBookletPdf(
+  first: number,
+  count: number,
+  options = 4,
+  statement = (n: number) => `Uma loja vendeu ${n} cadernos por R$ 5,00 cada. Quanto recebeu no total?`,
+  heading = "Matemática",
+): Uint8Array {
   const letters = ["A", "B", "C", "D", "E"].slice(0, options);
-  const pages: PdfTextLine[][] = [[{ x: 250, y: 800, text: "Matemática" }, { x: 290, y: 30, text: "1" }]];
+  const pages: PdfTextLine[][] = [[{ x: 250, y: 800, text: heading }, { x: 290, y: 30, text: "1" }]];
   let page: PdfTextLine[] = [{ x: 290, y: 30, text: "2" }];
   let y = 800;
   for (let n = first; n < first + count; n++) {

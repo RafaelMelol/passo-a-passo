@@ -70,7 +70,33 @@ describe("classificação de disciplina, assunto e dificuldade", () => {
     expect(subjectFromSection("Língua Portuguesa")).toBe("portugues");
     expect(subjectFromSection("Raciocínio Lógico")).toBe("matematica");
     expect(subjectFromSection("Noções de Informática")).toBe("informatica");
-    expect(subjectFromSection("Conhecimentos Gerais")).toBeNull();
+    expect(subjectFromSection("Conhecimentos Gerais")).toBe("conhecimentos-gerais");
+    expect(subjectFromSection("História e Geografia")).toBe("conhecimentos-gerais");
+    expect(subjectFromSection("Ciências Naturais")).toBe("conhecimentos-gerais");
+    expect(subjectFromSection("Conhecimentos Específicos")).toBeNull();
+    expect(subjectFromSection("Legislação Institucional")).toBeNull();
+  });
+
+  it("em Ciências Naturais, o assunto nunca vira História ou Geografia", () => {
+    const obesity = classifyQuestion({
+      text: "O gráfico do IBGE mostra as taxas de obesidade e de sobrepeso nas regiões do Brasil, em cada cidade pesquisada.",
+      sectionTitle: "Ciências Naturais",
+    });
+    expect(obesity).toMatchObject({ subject: "conhecimentos-gerais", topic: "ciencias-saude" });
+    const solar = classifyQuestion({
+      text: "O Brasil tem grande potencial de energia solar em todo o território, inclusive na cidade menos ensolarada do mapa.",
+      sectionTitle: "Ciências Naturais",
+    });
+    expect(solar.topic).toBe("meio-ambiente");
+    expect(classifyQuestion({ text: "A vacina protege contra o vírus da doença.", sectionTitle: "História e Geografia" }).topic).not.toBe("ciencias-saude");
+  });
+
+  it("classifica assuntos de Conhecimentos gerais por palavras-chave", () => {
+    expect(classifyTopic("conhecimentos-gerais", "A Lei Áurea, de 1888, aboliu a escravidão no Brasil durante o Império.").topic).toBe("historia-brasil");
+    expect(classifyTopic("conhecimentos-gerais", "O bioma Caatinga, de clima semiárido, ocupa grande parte da região Nordeste.").topic).toBe("geografia-brasil");
+    expect(classifyTopic("conhecimentos-gerais", "Segundo a Constituição, a saúde é direito de todos e dever do Estado.").topic).toBe("cidadania");
+    expect(classifyTopic("conhecimentos-gerais", "A vacina estimula o sistema imunológico contra o vírus da doença.").topic).toBe("ciencias-saude");
+    expect(classifyTopic("conhecimentos-gerais", "A reciclagem diminui a quantidade de lixo e a poluição ambiental.").topic).toBe("meio-ambiente");
   });
 
   it("classifica assuntos por palavras-chave", () => {

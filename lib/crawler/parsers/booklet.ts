@@ -26,15 +26,20 @@ interface HeadingMatch {
 }
 
 const OTHER_HEADINGS = [
-  "conhecimentos gerais",
   "conhecimentos especificos",
   "conhecimentos tecnicos",
   "legislacao",
   "etica no servico publico",
-  "atualidades",
-  "ciencias naturais",
-  "historia e geografia",
   "nocoes de administracao publica",
+];
+
+/** Seções que o site estuda como "Conhecimentos gerais", com o título canônico de cada uma. */
+const GENERAL_KNOWLEDGE_HEADINGS: [prefix: string, title: string][] = [
+  ["conhecimentos gerais", "Conhecimentos Gerais"],
+  ["atualidades", "Atualidades"],
+  ["ciencias naturais", "Ciências Naturais"],
+  ["ciencias humanas", "Ciências Humanas"],
+  ["historia e geografia", "História e Geografia"],
 ];
 
 /** Reconhece uma linha que é título de seção. */
@@ -53,6 +58,8 @@ export function matchSectionHeading(text: string): HeadingMatch | null {
   if (/^(nocoes de |conhecimentos de |conhecimentos basicos de )?informatica( basica)?$/.test(folded)) {
     return { title: "Informática", subject: "informatica" };
   }
+  const general = GENERAL_KNOWLEDGE_HEADINGS.find(([prefix]) => folded.startsWith(prefix));
+  if (general) return { title: general[1], subject: "conhecimentos-gerais" };
   if (OTHER_HEADINGS.some((heading) => folded.startsWith(heading))) return { title: clean };
   return null;
 }
